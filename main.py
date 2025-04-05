@@ -22,11 +22,15 @@ bg_img = pygame.transform.scale2x(pygame.image.load("imgs/bg.png"))
 base_img = pygame.image.load("imgs/base.png").convert_alpha()
 pipe_img = pygame.image.load("imgs/pipe.png").convert_alpha()
 bird_imgs = [pygame.image.load(f"imgs/bird{i+1}.png").convert_alpha() for i in range(3)]
+retart_img = pygame.image.load("UI/restart_button.png").convert_alpha()
+retart_img = pygame.transform.scale(retart_img, (screen_width//3, screen_height//4))
 
 flap_sfx = pygame.mixer.Sound("Sound_Effects/wing.ogg")
 flap_sfx.set_volume(0.1)
 point_sfx = pygame.mixer.Sound("Sound_Effects/point.ogg")
 point_sfx.set_volume(0.1)
+hit_sfx = pygame.mixer.Sound("Sound_Effects/hit.ogg")
+hit_sfx.set_volume(0.1)
 
 class Bird:
     def __init__(self):
@@ -57,6 +61,7 @@ class Bird:
         if self.rect.bottom >= screen_height - base_img.get_height():
             self.rect.bottom = screen_height - base_img.get_height()
             self.velocity = 0
+            hit_sfx.play() # Play the hit sound effect
             # Show game over menu
             game_over_menu()
             pipe_list.clear()  # Clear the pipes when the bird hits the base
@@ -69,8 +74,7 @@ class Bird:
     def draw(self):
         angle = min(max(self.velocity * -5, -25), 25)
         self.rotated_bird = pygame.transform.rotate(self.image, angle) # Cap angle between -25 and 25 degrees
-        self.rotated_rect = self.rotated_bird.get_rect(center=self.rect.center)
-        screen.blit(self.rotated_bird, self.rotated_rect)
+        screen.blit(self.rotated_bird, self.rect)
 
 class Base:
     def __init__(self , x):
@@ -174,14 +178,23 @@ def game_over_menu():
                 score = 0  # Reset the score to 0
                 return  # Exit the game over menu and restart the game
             
-        screen.blit(bird.rotated_bird, bird.rotated_rect)
         for pipe in pipe_list:
             pipe.draw()
 
         for base in base_list: 
             base.draw()
         
+        screen.blit(bird.rotated_bird, bird.rect)
+        
         screen.blit(game_over_img, (screen_width//2 - game_over_img.get_width()//2, 100))  # Draw the game over image
+
+        screen.blit(retart_img, (screen_width//2 - retart_img.get_width()//2, 300))  # Draw the restart image
+        # Draw the score
+        total_width = score_list[0].get_width() * len(score_list)
+        x = (screen_width - total_width) // 2  # Center the score on the screen
+        for i in range(len(score_list)):
+            screen.blit(score_list[i], (x + i * score_list[0].get_width(), 50))
+
             
         clock.tick(60)  # Limit the frame rate to 60 FPS
         pygame.display.flip()  # Update the display
@@ -226,6 +239,7 @@ while True:
             pipe_list.remove(pipe)
 
         if pipe.collide():
+            hit_sfx.play() # Play the hit sound effect
             game_over_menu() # Show game over menu
             pipe_list.clear() # Clear the pipes when the bird collides with a pipe
 
