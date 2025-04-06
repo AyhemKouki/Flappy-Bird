@@ -1,4 +1,4 @@
-import pygame , sys , random
+import pygame , sys , random , os
 
 pygame.init()
 pygame.mixer.init()
@@ -11,6 +11,11 @@ gravity = 0.5
 jump_strength = -8
 
 score = 0
+# Initialize high score
+high_score = 0
+if os.path.exists("high_score.txt"):
+    with open("high_score.txt", "r") as file:
+        high_score = int(file.read())
 
 # Set up the screen
 screen = pygame.display.set_mode((screen_width,screen_height))
@@ -160,9 +165,16 @@ def start_menu():
 
 
 def game_over_menu():
-    global score_list , score
+    global score_list , score , high_score
+    print(pygame.font.get_fonts())
 
     game_over_img = pygame.image.load("UI/gameover.png").convert_alpha()
+
+    # Update high score if the current score is greater
+    if score > high_score:
+        high_score = score
+        with open("high_score.txt", "w") as file:
+            file.write(str(high_score))
 
     while True:
         screen.blit(bg_img, (0, -300))  # Draw the background
@@ -194,6 +206,10 @@ def game_over_menu():
         x = (screen_width - total_width) // 2  # Center the score on the screen
         for i in range(len(score_list)):
             screen.blit(score_list[i], (x + i * score_list[0].get_width(), 50))
+
+        # Display high score in the game over menu
+        high_score_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 30).render(f"High Score: {high_score}", True, (255, 255, 255))
+        screen.blit(high_score_text, (screen_width // 2 - high_score_text.get_width() // 2, 200))
 
             
         clock.tick(60)  # Limit the frame rate to 60 FPS
