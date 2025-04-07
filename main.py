@@ -20,15 +20,17 @@ if os.path.exists("high_score.txt"):
 # Set up the screen
 screen = pygame.display.set_mode((screen_width,screen_height))
 pygame.display.set_caption("Flappy Bird")
-pygame.display.set_icon(pygame.image.load("imgs/bird2.png"))
+pygame.display.set_icon(pygame.image.load("UI/favicon.ico"))
 
 # Load images and sounds
 bg_img = pygame.transform.scale2x(pygame.image.load("imgs/bg.png"))
 base_img = pygame.image.load("imgs/base.png").convert_alpha()
 pipe_img = pygame.image.load("imgs/pipe.png").convert_alpha()
-bird_imgs = [pygame.image.load(f"imgs/bird{i+1}.png").convert_alpha() for i in range(3)]
 retart_img = pygame.image.load("UI/restart_button.png").convert_alpha()
 retart_img = pygame.transform.scale(retart_img, (screen_width//3, screen_height//4))
+def bird_img(color):
+    bird_imgs = [pygame.image.load(f"imgs/{color}bird{i+1}.png").convert_alpha() for i in range(3)]
+    return bird_imgs
 
 flap_sfx = pygame.mixer.Sound("Sound_Effects/wing.ogg")
 flap_sfx.set_volume(0.1)
@@ -39,7 +41,7 @@ hit_sfx.set_volume(0.1)
 
 class Bird:
     def __init__(self):
-        self.bird_imgs = bird_imgs
+        self.bird_imgs = bird_img("yellow") # Load bird images
         self.index = 0
         self.image = self.bird_imgs[self.index]
         self.rect = self.image.get_rect(center=(100, screen_height // 2))
@@ -133,18 +135,72 @@ def display_score():
         score_number = pygame.image.load(f"UI/Numbers/{i}.png").convert_alpha()
         score_list.append(score_number)
     
+def choose_skin():
+    yellow_bird = pygame.image.load("imgs/yellowbird1.png").convert_alpha()
+    yellow_bird_rect = yellow_bird.get_rect(center=(screen_width//3 - 75 , 130))
+    red_bird = pygame.image.load("imgs/redbird1.png").convert_alpha()
+    red_bird_rect = red_bird.get_rect(center=(screen_width//3 * 2 - 75, 130))
+    blue_bird = pygame.image.load("imgs/bluebird1.png").convert_alpha()
+    blue_bird_rect = blue_bird.get_rect(center=(screen_width//3 * 3 - 75 , 130))
+
+    global bird
+    bird = Bird()
+
+    while True:
+        for event in pygame.event.get():    
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = pygame.mouse.get_pressed()
+        if mouse_click[0] == 1 and yellow_bird_rect.collidepoint(mouse_pos):
+            bird.bird_imgs = bird_img("yellow")  # Set the bird's images to the selected skin
+            bird.image = bird.bird_imgs[0]  # Set the initial bird image
+            bird_skin.bird_imgs = bird_img("yellow")
+            bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
+            return "yellow"
+        if mouse_click[0] == 1 and red_bird_rect.collidepoint(mouse_pos):
+            bird.bird_imgs = bird_img("red")  # Set the bird's images to the selected skin
+            bird.image = bird.bird_imgs[0]
+            bird_skin.bird_imgs = bird_img("red")
+            bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
+            return "red"
+        if mouse_click[0] == 1 and blue_bird_rect.collidepoint(mouse_pos):
+            bird.bird_imgs = bird_img("blue")  # Set the bird's images to the selected skin
+            bird.image = bird.bird_imgs[0]
+            bird_skin.bird_imgs = bird_img("blue")
+            bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
+            return "blue"
+        screen.blit(bg_img, (0, -300))  # Draw the background
+
+        skin_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 20).render("Choose Your Skin", True, (255, 255, 255))
+        screen.blit(skin_text, (screen_width//2 - skin_text.get_width()//2, 50))
+
+        screen.blit(yellow_bird, yellow_bird_rect)  # Draw the yellow bird image
+        screen.blit(red_bird,red_bird_rect)  # Draw the red bird image
+        screen.blit(blue_bird, blue_bird_rect)  # Draw the blue bird image
+
+        clock.tick(60)  # Limit the frame rate to 60 FPS
+        pygame.display.flip()  # Update the display
+
+def update_bases():
+    for base in base_list:
+        base.draw()
+        base.move()
 
 
 def start_menu():
     start_menu_img = pygame.image.load("UI/start.png").convert_alpha()
     start_menu_img = pygame.transform.scale(start_menu_img, (screen_width//2, screen_height//2))
 
-    base = [Base(0), Base(base_img.get_width()), Base(base_img.get_width() * 2)]
-    bird = Bird()
+    select_skin_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 10).render("skins", True, (255, 255, 255))
 
     while True:
         screen.blit(bg_img, (0, -300))  # Draw the background 
         screen.blit(start_menu_img, (screen_width//2 - start_menu_img.get_width()//2,100))  # Draw the start menu image
+        bird_skin.rect.center = (screen_width - bird_skin.rect.width, 20)  # Center the bird image
+        screen.blit(select_skin_text, (bird_skin.rect.x - 5 , bird_skin.rect.y + 30))  # Draw the text
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -152,13 +208,16 @@ def start_menu():
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return  # Exit the start menu and start the game
-            
+        
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = pygame.mouse.get_pressed()
+        if mouse_click[0] == 1 and bird_skin.rect.collidepoint(mouse_pos):
+            skin_color = choose_skin()
         bird.animate()
         bird.draw()
+        bird_skin.draw()
             
-        for base in base_list:
-            base.draw()
-            base.move()
+        update_bases()  # Update the base positions
 
         clock.tick(60)  # Limit the frame rate to 60 FPS
         pygame.display.flip()
@@ -166,7 +225,6 @@ def start_menu():
 
 def game_over_menu():
     global score_list , score , high_score
-    print(pygame.font.get_fonts())
 
     game_over_img = pygame.image.load("UI/gameover.png").convert_alpha()
 
@@ -208,7 +266,7 @@ def game_over_menu():
             screen.blit(score_list[i], (x + i * score_list[0].get_width(), 50))
 
         # Display high score in the game over menu
-        high_score_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 30).render(f"High Score: {high_score}", True, (255, 255, 255))
+        high_score_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 20).render(f"High Score: {high_score}", True, (255, 255, 255))
         screen.blit(high_score_text, (screen_width // 2 - high_score_text.get_width() // 2, 200))
 
             
@@ -219,6 +277,7 @@ def game_over_menu():
 base_list =[Base(0),Base(base_img.get_width()),Base(base_img.get_width()*2)] 
 pipe_list = []
 bird = Bird()
+bird_skin = Bird()
 score_list = [pygame.image.load("UI/Numbers/0.png").convert_alpha()]  # Initialize the score list
 
 # Set up a timer event for spawning pipes
@@ -241,7 +300,7 @@ while True:
             if event.key == pygame.K_SPACE:
                 bird.jump()
 
-    screen.blit(bg_img,(0,-300))
+    screen.blit(bg_img,(0,-300)) # Draw the background
 
     bird.draw()
     bird.move()
@@ -259,10 +318,8 @@ while True:
             game_over_menu() # Show game over menu
             pipe_list.clear() # Clear the pipes when the bird collides with a pipe
 
-    for base in base_list:
-        base.draw()
-        base.move()
-
+    update_bases() # Update the base positions
+    
     # Draw the score
     total_width = score_list[0].get_width() * len(score_list)
     x = (screen_width - total_width) // 2  # Center the score on the screen
