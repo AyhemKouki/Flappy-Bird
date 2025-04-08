@@ -25,12 +25,16 @@ pygame.display.set_icon(pygame.image.load("UI/favicon.ico"))
 # Load images and sounds
 bg_img = pygame.transform.scale2x(pygame.image.load("imgs/bg.png"))
 base_img = pygame.image.load("imgs/base.png").convert_alpha()
-pipe_img = pygame.image.load("imgs/pipe.png").convert_alpha()
+pipe_img = pygame.image.load("imgs/pipe-green.png").convert_alpha()
+pipe_img = pygame.transform.scale(pipe_img, (52, 400))
 retart_img = pygame.image.load("UI/restart_button.png").convert_alpha()
 retart_img = pygame.transform.scale(retart_img, (screen_width//3, screen_height//4))
 def bird_img(color):
     bird_imgs = [pygame.image.load(f"imgs/{color}bird{i+1}.png").convert_alpha() for i in range(3)]
     return bird_imgs
+back_button = pygame.transform.scale2x(pygame.image.load("UI/back.png").convert_alpha())
+back_rect = back_button.get_rect()
+back_rect.topleft = (10, 10)  # Set the position of the back button
 
 flap_sfx = pygame.mixer.Sound("Sound_Effects/wing.ogg")
 flap_sfx.set_volume(0.1)
@@ -159,19 +163,19 @@ def choose_skin():
             bird.image = bird.bird_imgs[0]  # Set the initial bird image
             bird_skin.bird_imgs = bird_img("yellow")
             bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
-            return "yellow"
+            return 
         if mouse_click[0] == 1 and red_bird_rect.collidepoint(mouse_pos):
             bird.bird_imgs = bird_img("red")  # Set the bird's images to the selected skin
             bird.image = bird.bird_imgs[0]
             bird_skin.bird_imgs = bird_img("red")
             bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
-            return "red"
+            return 
         if mouse_click[0] == 1 and blue_bird_rect.collidepoint(mouse_pos):
             bird.bird_imgs = bird_img("blue")  # Set the bird's images to the selected skin
             bird.image = bird.bird_imgs[0]
             bird_skin.bird_imgs = bird_img("blue")
             bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
-            return "blue"
+            return 
         screen.blit(bg_img, (0, -300))  # Draw the background
 
         skin_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 20).render("Choose Your Skin", True, (255, 255, 255))
@@ -212,7 +216,7 @@ def start_menu():
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()
         if mouse_click[0] == 1 and bird_skin.rect.collidepoint(mouse_pos):
-            skin_color = choose_skin()
+            choose_skin()
         bird.animate()
         bird.draw()
         bird_skin.draw()
@@ -251,6 +255,15 @@ def game_over_menu():
         for pipe in pipe_list:
             pipe.draw()
 
+        screen.blit(back_button, back_rect)  # Draw the back button
+            
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = pygame.mouse.get_pressed()
+        if mouse_click[0] == 1 and back_rect.collidepoint(mouse_pos):
+            bird.rect.center = (100, screen_height // 2)
+            bird.velocity = 0
+            start_menu()  # Go back to the start menu when the image is clicked
+            break
         for base in base_list: 
             base.draw()
         
