@@ -10,6 +10,11 @@ screen_width , screen_height = 500 , 650
 gravity = 0.5
 jump_strength = -8
 
+current_pipe_color = "green"  # Default pipe color
+current_bird_color = "yellow"  # Default bird color
+selected_bird = "yellow" # Default selected bird color
+selected_pipe = "green" # Default selected pipe color
+
 score = 0
 # Initialize high score
 high_score = 0
@@ -25,13 +30,15 @@ pygame.display.set_icon(pygame.image.load("UI/favicon.ico"))
 # Load images and sounds
 bg_img = pygame.transform.scale2x(pygame.image.load("imgs/bg.png"))
 base_img = pygame.image.load("imgs/base.png").convert_alpha()
-pipe_img = pygame.image.load("imgs/pipe-green.png").convert_alpha()
-pipe_img = pygame.transform.scale(pipe_img, (52, 400))
 retart_img = pygame.image.load("UI/restart_button.png").convert_alpha()
 retart_img = pygame.transform.scale(retart_img, (screen_width//3, screen_height//4))
 def bird_img(color):
     bird_imgs = [pygame.image.load(f"imgs/{color}bird{i+1}.png").convert_alpha() for i in range(3)]
     return bird_imgs
+def pipe_img(color):
+    pipe_image = pygame.image.load(f"imgs/pipe-{color}.png").convert_alpha()
+    pipe_image = pygame.transform.scale(pipe_image,(52 , 400))
+    return pipe_image
 back_button = pygame.transform.scale2x(pygame.image.load("UI/back.png").convert_alpha())
 back_rect = back_button.get_rect()
 back_rect.topleft = (10, 10)  # Set the position of the back button
@@ -45,7 +52,7 @@ hit_sfx.set_volume(0.1)
 
 class Bird:
     def __init__(self):
-        self.bird_imgs = bird_img("yellow") # Load bird images
+        self.bird_imgs = bird_img(current_bird_color) # Load bird images
         self.index = 0
         self.image = self.bird_imgs[self.index]
         self.rect = self.image.get_rect(center=(100, screen_height // 2))
@@ -105,7 +112,7 @@ class Base:
 class Pipe:
     def __init__(self):
         self.gap = 130
-        self.img = pipe_img
+        self.img = pipe_img(current_pipe_color) # Load the pipe image
         self.rect = self.img.get_rect()
         self.rect.x = screen_width
         self.rect.y = random.randint( self.gap + 50 , screen_height - base_img.get_height() - 50 )
@@ -140,6 +147,12 @@ def display_score():
         score_list.append(score_number)
     
 def choose_skin():
+    global bird , current_pipe_color , current_bird_color , selected_bird , selected_pipe
+
+    select_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 15).render("selected", True, (255, 255, 255),(17, 46, 112))
+    
+
+    #load skins for the game
     yellow_bird = pygame.image.load("imgs/yellowbird1.png").convert_alpha()
     yellow_bird_rect = yellow_bird.get_rect(center=(screen_width//3 - 75 , 130))
     red_bird = pygame.image.load("imgs/redbird1.png").convert_alpha()
@@ -147,14 +160,19 @@ def choose_skin():
     blue_bird = pygame.image.load("imgs/bluebird1.png").convert_alpha()
     blue_bird_rect = blue_bird.get_rect(center=(screen_width//3 * 3 - 75 , 130))
 
-    global bird
+    red_pipe = pygame.transform.scale(pipe_img("red"),(52 , 200))
+    red_pipe_rect = red_pipe.get_rect(center=(screen_width//3  , 400))
+    green_pipe = pygame.transform.scale(pipe_img("green"),(52 , 200))
+    green_pipe_rect = green_pipe.get_rect(center=(screen_width//3 * 2  , 400))
+
     bird = Bird()
 
-    while True:
+    while True: 
         for event in pygame.event.get():    
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+        screen.blit(bg_img, (0, -300))  # Draw the background
             
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()
@@ -163,20 +181,47 @@ def choose_skin():
             bird.image = bird.bird_imgs[0]  # Set the initial bird image
             bird_skin.bird_imgs = bird_img("yellow")
             bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
-            return 
-        if mouse_click[0] == 1 and red_bird_rect.collidepoint(mouse_pos):
+            current_bird_color = "yellow"  # Set the current bird color to yellow
+            selected_bird = "yellow"
+             
+        elif mouse_click[0] == 1 and red_bird_rect.collidepoint(mouse_pos):
             bird.bird_imgs = bird_img("red")  # Set the bird's images to the selected skin
             bird.image = bird.bird_imgs[0]
             bird_skin.bird_imgs = bird_img("red")
             bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
-            return 
-        if mouse_click[0] == 1 and blue_bird_rect.collidepoint(mouse_pos):
+            current_bird_color = "red"  # Set the current bird color to red
+            selected_bird = "red"
+
+        elif mouse_click[0] == 1 and blue_bird_rect.collidepoint(mouse_pos):
             bird.bird_imgs = bird_img("blue")  # Set the bird's images to the selected skin
             bird.image = bird.bird_imgs[0]
             bird_skin.bird_imgs = bird_img("blue")
             bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
-            return 
-        screen.blit(bg_img, (0, -300))  # Draw the background
+            current_bird_color = "blue"  # Set the current bird color to blue
+            selected_bird = "blue"
+            
+        elif mouse_click[0] == 1 and red_pipe_rect.collidepoint(mouse_pos):
+            current_pipe_color = "red"  # Set the pipe color to red
+            selected_pipe = "red"
+            
+        elif mouse_click[0] == 1 and green_pipe_rect.collidepoint(mouse_pos):
+            current_pipe_color = "green"  # Set the pipe color to green
+            selected_pipe = "green"
+        
+        if mouse_click[0] == 1 and back_rect.collidepoint(mouse_pos):
+            return
+        
+        if selected_bird == "yellow":
+            screen.blit(select_text, (yellow_bird_rect.x - select_text.get_width()//3 , yellow_bird_rect.y + 30))
+        elif selected_bird == "red":
+            screen.blit(select_text, (red_bird_rect.x - select_text.get_width()//3 , red_bird_rect.y + 30))
+        elif selected_bird == "blue":
+            screen.blit(select_text, (blue_bird_rect.x - select_text.get_width()//3 , blue_bird_rect.y + 30))
+
+        if selected_pipe == "red":
+            screen.blit(select_text, (red_pipe_rect.x - select_text.get_width()//3 , red_pipe_rect.y + red_pipe_rect.height + 30))
+        elif selected_pipe == "green":
+            screen.blit(select_text, (green_pipe_rect.x - select_text.get_width()//3 , green_pipe_rect.y + green_pipe_rect.height + 30))
 
         skin_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 20).render("Choose Your Skin", True, (255, 255, 255))
         screen.blit(skin_text, (screen_width//2 - skin_text.get_width()//2, 50))
@@ -184,6 +229,11 @@ def choose_skin():
         screen.blit(yellow_bird, yellow_bird_rect)  # Draw the yellow bird image
         screen.blit(red_bird,red_bird_rect)  # Draw the red bird image
         screen.blit(blue_bird, blue_bird_rect)  # Draw the blue bird image
+
+        screen.blit(red_pipe, red_pipe_rect)  # Draw the red pipe image
+        screen.blit(green_pipe, green_pipe_rect)  # Draw the green pipe image
+
+        screen.blit(back_button, back_rect)  # Draw the back button
 
         clock.tick(60)  # Limit the frame rate to 60 FPS
         pygame.display.flip()  # Update the display
@@ -204,6 +254,7 @@ def start_menu():
         screen.blit(bg_img, (0, -300))  # Draw the background 
         screen.blit(start_menu_img, (screen_width//2 - start_menu_img.get_width()//2,100))  # Draw the start menu image
         bird_skin.rect.center = (screen_width - bird_skin.rect.width, 20)  # Center the bird image
+        bird.bird_imgs = bird_skin.bird_imgs  # Set the bird's images to the selected skin
         screen.blit(select_skin_text, (bird_skin.rect.x - 5 , bird_skin.rect.y + 30))  # Draw the text
         
         for event in pygame.event.get():
