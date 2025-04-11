@@ -5,18 +5,22 @@ pygame.mixer.init()
 
 clock = pygame.time.Clock()
 
-# Set up the screen dimensions and gravity
+# Set up the screen dimensions, gravity and jump strength
 screen_width , screen_height = 500 , 650
 gravity = 0.5
 jump_strength = -8
 
-current_pipe_color = "green"  # Default pipe color
-current_bird_color = "yellow"  # Default bird color
-selected_bird = "yellow" # Default selected bird color
-selected_pipe = "green" # Default selected pipe color
+# Default colors for pipe, bird, and background (used for skin customization)
+current_pipe_color = "green" 
+current_bird_color = "yellow" 
+current_bg_color = "day"  
+selected_bird = "yellow" 
+selected_pipe = "green" 
+selected_bg = "day" 
 
+# Initialize score
 score = 0
-# Initialize high score
+# Initialize high score by loading it from a file if it exists
 high_score = 0
 if os.path.exists("high_score.txt"):
     with open("high_score.txt", "r") as file:
@@ -28,10 +32,12 @@ pygame.display.set_caption("Flappy Bird")
 pygame.display.set_icon(pygame.image.load("UI/favicon.ico"))
 
 # Load images and sounds
-bg_img = pygame.transform.scale2x(pygame.image.load("imgs/bg.png"))
 base_img = pygame.image.load("imgs/base.png").convert_alpha()
 retart_img = pygame.image.load("UI/restart_button.png").convert_alpha()
 retart_img = pygame.transform.scale(retart_img, (screen_width//3, screen_height//4))
+def background_img(color):
+    bg_img = pygame.transform.scale2x(pygame.image.load(f"imgs/bg-{color}.png"))
+    return bg_img
 def bird_img(color):
     bird_imgs = [pygame.image.load(f"imgs/{color}bird{i+1}.png").convert_alpha() for i in range(3)]
     return bird_imgs
@@ -143,11 +149,15 @@ class Pipe:
 def display_score():
     score_list.clear() # Clear the previous score images
     for i in str(score):
-        score_number = pygame.image.load(f"UI/Numbers/{i}.png").convert_alpha()
+        if i !="1":
+            score_number = pygame.image.load(f"UI/Numbers/{i}.png").convert_alpha()
+        else:
+            score_number = pygame.transform.scale(pygame.image.load(f"UI/Numbers/1.png").convert_alpha(),(24,36))
         score_list.append(score_number)
-    
+
+# Function to display the skin selection menu and allow the player to choose bird, pipe, and background skins
 def choose_skin():
-    global bird , current_pipe_color , current_bird_color , selected_bird , selected_pipe
+    global bird , current_pipe_color , current_bird_color ,current_bg_color, selected_bird , selected_pipe , selected_bg
 
     select_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 15).render("selected", True, (255, 255, 255),(17, 46, 112))
     
@@ -161,9 +171,14 @@ def choose_skin():
     blue_bird_rect = blue_bird.get_rect(center=(screen_width//3 * 3 - 75 , 130))
 
     red_pipe = pygame.transform.scale(pipe_img("red"),(52 , 200))
-    red_pipe_rect = red_pipe.get_rect(center=(screen_width//3  , 400))
+    red_pipe_rect = red_pipe.get_rect(center=(screen_width//3  , 290))
     green_pipe = pygame.transform.scale(pipe_img("green"),(52 , 200))
-    green_pipe_rect = green_pipe.get_rect(center=(screen_width//3 * 2  , 400))
+    green_pipe_rect = green_pipe.get_rect(center=(screen_width//3 * 2  , 290))
+
+    bg_img_day = pygame.transform.scale(pygame.image.load("imgs/bg-day.png") , (100 , 100) ) # Load the day background image
+    bg_img_day_rect = bg_img_day.get_rect(center= (screen_width//3 , 500))
+    bg_img_night = pygame.transform.scale(pygame.image.load("imgs/bg-night.png"), (100,100))  # Load the night background image
+    bg_img_night_rect = bg_img_night.get_rect(center=(screen_width//3 * 2 , 500))
 
     bird = Bird()
 
@@ -172,10 +187,14 @@ def choose_skin():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        screen.blit(bg_img, (0, -300))  # Draw the background
-            
+        screen.blit(pygame.transform.scale2x(pygame.image.load(f"imgs/bg-{selected_bg}.png")), (0, -300))  # Draw the background
+        screen.blit(bg_img_day, bg_img_day_rect)  # Draw the day background image
+        screen.blit(bg_img_night, bg_img_night_rect)  # Draw the night background image
+
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()
+
+        # bird selection
         if mouse_click[0] == 1 and yellow_bird_rect.collidepoint(mouse_pos):
             bird.bird_imgs = bird_img("yellow")  # Set the bird's images to the selected skin
             bird.image = bird.bird_imgs[0]  # Set the initial bird image
@@ -199,7 +218,8 @@ def choose_skin():
             bird_skin.image = bird.bird_imgs[0]  # Set the skin image to the first frame of the selected bird
             current_bird_color = "blue"  # Set the current bird color to blue
             selected_bird = "blue"
-            
+        
+        # pipe selection
         elif mouse_click[0] == 1 and red_pipe_rect.collidepoint(mouse_pos):
             current_pipe_color = "red"  # Set the pipe color to red
             selected_pipe = "red"
@@ -207,6 +227,14 @@ def choose_skin():
         elif mouse_click[0] == 1 and green_pipe_rect.collidepoint(mouse_pos):
             current_pipe_color = "green"  # Set the pipe color to green
             selected_pipe = "green"
+
+        # background selection  
+        elif mouse_click[0] == 1 and bg_img_day_rect.collidepoint(mouse_pos):
+            current_bg_color = "day"  # Set the background color to day
+            selected_bg = "day"
+        elif mouse_click[0] == 1 and bg_img_night_rect.collidepoint(mouse_pos):
+            current_bg_color = "night" # Set the background color to night
+            selected_bg = "night"
         
         if mouse_click[0] == 1 and back_rect.collidepoint(mouse_pos):
             return
@@ -219,9 +247,16 @@ def choose_skin():
             screen.blit(select_text, (blue_bird_rect.x - select_text.get_width()//3 , blue_bird_rect.y + 30))
 
         if selected_pipe == "red":
-            screen.blit(select_text, (red_pipe_rect.x - select_text.get_width()//3 , red_pipe_rect.y + red_pipe_rect.height + 30))
+            screen.blit(select_text, (red_pipe_rect.x - select_text.get_width()//3 , red_pipe_rect.y + red_pipe_rect.height + 10))
         elif selected_pipe == "green":
-            screen.blit(select_text, (green_pipe_rect.x - select_text.get_width()//3 , green_pipe_rect.y + green_pipe_rect.height + 30))
+            screen.blit(select_text, (green_pipe_rect.x - select_text.get_width()//3 , green_pipe_rect.y + green_pipe_rect.height + 10))
+
+        if selected_bg == "day":
+            screen.blit(select_text, (bg_img_day_rect.x - 10 , bg_img_day_rect.y + bg_img_day_rect.height + 10))
+            pygame.draw.rect(screen, (0, 0, 0), bg_img_day_rect, 1) # Draw a border around the selected day background
+        elif selected_bg == "night":
+            screen.blit(select_text, (bg_img_night_rect.x - 10 , bg_img_night_rect.y + bg_img_night_rect.height + 10))
+            pygame.draw.rect(screen, (0, 0, 0), bg_img_night_rect, 1) # Draw a border around the selected night background
 
         skin_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 20).render("Choose Your Skin", True, (255, 255, 255))
         screen.blit(skin_text, (screen_width//2 - skin_text.get_width()//2, 50))
@@ -251,6 +286,7 @@ def start_menu():
     select_skin_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 10).render("skins", True, (255, 255, 255))
 
     while True:
+        bg_img = background_img(current_bg_color)  # Load the background image
         screen.blit(bg_img, (0, -300))  # Draw the background 
         screen.blit(start_menu_img, (screen_width//2 - start_menu_img.get_width()//2,100))  # Draw the start menu image
         bird_skin.rect.center = (screen_width - bird_skin.rect.width, 20)  # Center the bird image
@@ -268,6 +304,7 @@ def start_menu():
         mouse_click = pygame.mouse.get_pressed()
         if mouse_click[0] == 1 and bird_skin.rect.collidepoint(mouse_pos):
             choose_skin()
+            
         bird.animate()
         bird.draw()
         bird_skin.draw()
@@ -282,6 +319,8 @@ def game_over_menu():
     global score_list , score , high_score
 
     game_over_img = pygame.image.load("UI/gameover.png").convert_alpha()
+
+    bg_img = background_img(current_bg_color)  # Load the background image
 
     # Update high score if the current score is greater
     if score > high_score:
@@ -353,6 +392,7 @@ start_menu()  # Show the start menu before the game begins
 
 # Main game loop
 while True:
+    bg_img = background_img(current_bg_color)  # Load the background image
     #event handler
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -385,10 +425,12 @@ while True:
     update_bases() # Update the base positions
     
     # Draw the score
-    total_width = score_list[0].get_width() * len(score_list)
+    total_width = 0 
+    for i in range(len(score_list)):
+        total_width += score_list[i].get_width()
     x = (screen_width - total_width) // 2  # Center the score on the screen
     for i in range(len(score_list)):
-        screen.blit(score_list[i], (x + i * score_list[0].get_width(), 50))
+        screen.blit(score_list[i], (x + i * score_list[i].get_width(), 50))
 
     clock.tick(60)
-    pygame.display.flip()
+    pygame.display.flip() 
