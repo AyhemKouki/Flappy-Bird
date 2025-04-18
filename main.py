@@ -55,6 +55,10 @@ point_sfx = pygame.mixer.Sound("Sound_Effects/point.ogg")
 point_sfx.set_volume(0.1)
 hit_sfx = pygame.mixer.Sound("Sound_Effects/hit.ogg")
 hit_sfx.set_volume(0.1)
+# Load and play background music
+pygame.mixer.music.load("Sound_Effects/FlappyBirdMusic.mp3")  # Replace with your music file path
+pygame.mixer.music.set_volume(0.1)  # Set the volume (0.0 to 1.0)
+pygame.mixer.music.play(-1)  # Play the music in a loop
 
 class Bird:
     def __init__(self):
@@ -285,6 +289,8 @@ def start_menu():
 
     select_skin_text = pygame.font.Font("fonts/PressStart2P-Regular.ttf", 10).render("skins", True, (255, 255, 255))
 
+    pygame.mixer.music.play(-1)  # Restart the background music
+
     while True:
         bg_img = background_img(current_bg_color)  # Load the background image
         screen.blit(bg_img, (0, -300))  # Draw the background 
@@ -328,6 +334,8 @@ def game_over_menu():
         with open("high_score.txt", "w") as file:
             file.write(str(high_score))
 
+    pygame.mixer.music.stop()  # Stop the background music
+
     while True:
         screen.blit(bg_img, (0, -300))  # Draw the background
         
@@ -336,6 +344,7 @@ def game_over_menu():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                pygame.mixer.music.play(-1)  # Play the music in a loop
                 bird.rect.center = (100, screen_height // 2)  # Reset the bird position
                 bird.velocity = 0  # Reset the bird's velocity 
                 score_list = [pygame.image.load("UI/Numbers/0.png").convert_alpha()]  # Reset the score list
